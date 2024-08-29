@@ -2,8 +2,10 @@
 
 
 # ꧁꧂  xRef-TLD 👁️‍🗨️
+
 xref-TLD is a cross platform domain cross ref. tool used to discover domains with different TDL and the same name. 
 
+Filter Option yes = blank lander pages, pages for sale, under constuction, or under 2.8kb in size are not seen as valid. 
 
 # ꧁꧂  Buy me a coffee ☕
 
