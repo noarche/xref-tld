@@ -7,6 +7,14 @@ xref-TLD is a cross platform domain cross ref. tool used to discover domains wit
 
 Filter Option yes = blank lander pages, pages for sale, under constuction, or under 2.8kb in size are not seen as valid. 
 
+
+# ꧁꧂ Docker Image 🪅
+
+
+`docker run -it torquetraction/xref-tld:latest`
+
+[Download Docker Image](https://hub.docker.com/r/torquetraction/noisy)
+
 # ꧁꧂  Buy me a coffee ☕
 
 ![qrCode](https://raw.githubusercontent.com/noarche/cd-ripper/main/unrelated-ignore/CryptoQRcodes.png)
