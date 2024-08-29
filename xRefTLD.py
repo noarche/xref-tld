@@ -1,6 +1,7 @@
 import os
 import requests
 import threading
+import socket
 from queue import Queue
 from tqdm import tqdm
 from colorama import Fore, Style, init
@@ -46,6 +47,9 @@ while True:
             gtld = queue.get()
             url = f"https://{website_name}.{gtld}"
             try:
+                # Resolve the IPv4 address
+                ipv4 = socket.gethostbyname(f"{website_name}.{gtld}")
+
                 response = requests.get(url, timeout=5)
                 if response.status_code == 200:
                     # Calculate bandwidth used in KB
@@ -69,15 +73,15 @@ while True:
                                     break
                             else:
                                 with threading.Lock():
-                                    print(f"{Fore.GREEN}{bandwidth_used:.2f}KB {url} {safe_title}")
+                                    print(f"{Fore.GREEN}{ipv4} | {bandwidth_used:.2f}KB | {url} | {safe_title}")
                                     with open(responsive_links_path, 'a', encoding='utf-8') as responsive_file:
-                                        responsive_file.write(f"{bandwidth_used:.2f}KB,{url},{safe_title}\n")
+                                        responsive_file.write(f"{ipv4},{bandwidth_used:.2f}KB,{url},{safe_title}\n")
                     else:
                         with threading.Lock():
-                            print(f"{Fore.GREEN}{bandwidth_used:.2f}KB {url} {safe_title}")
+                            print(f"{Fore.GREEN}{ipv4} | {bandwidth_used:.2f}KB | {url} | {safe_title}")
                             with open(responsive_links_path, 'a', encoding='utf-8') as responsive_file:
-                                responsive_file.write(f"{bandwidth_used:.2f}KB,{url},{safe_title}\n")
-            except requests.RequestException:
+                                responsive_file.write(f"{ipv4},{bandwidth_used:.2f}KB,{url},{safe_title}\n")
+            except (requests.RequestException, socket.gaierror):
                 pass
             pbar.update(1)
             queue.task_done()
@@ -102,9 +106,3 @@ while True:
             thread.join()
 
     print(f"{Fore.YELLOW}Finished checking websites.{Style.RESET_ALL}")
-
-    # Ask the user if they want to run the script again
-    run_again = input("Do you want to check another website? (yes/y or no/n) [default: no]: ").strip().lower()
-    if run_again not in ['yes', 'y']:
-        print(f"{Fore.RED}Exiting...{Style.RESET_ALL}")
-        break
