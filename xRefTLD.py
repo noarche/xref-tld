@@ -1,3 +1,28 @@
+# Disclaimer:
+# This code/script/application/program is solely for educational and learning purposes.
+# All information, datasets, images, code, and materials are presented in good faith and
+# intended for instructive use. However, noarche make no representation or warranty, 
+# express or implied, regarding the accuracy, adequacy, validity, reliability, availability,
+# or completeness of any data or associated materials.
+# Under no circumstance shall noarche have any liability to you for any loss, damage, or 
+# misinterpretation arising due to the use of or reliance on the provided data. Your utilization
+# of the code and your interpretations thereof are undertaken at your own discretion and risk.
+#
+# By executing script/code/application, the user acknowledges and agrees that they have read, 
+# understood, and accepted the terms and conditions (or any other relevant documentation or 
+#policy) as provided by noarche.
+#
+#Visit https://github.com/noarche for more information. 
+#
+#  _.··._.·°°°·.°·..·°¯°·._.··._.·°¯°·.·° .·°°°°·.·°·._.··._
+# ███╗   ██╗ ██████╗  █████╗ ██████╗  ██████╗██╗  ██╗███████╗
+# ████╗  ██║██╔═══██╗██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝
+# ██╔██╗ ██║██║   ██║███████║██████╔╝██║     ███████║█████╗  
+# ██║╚██╗██║██║   ██║██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  
+# ██║ ╚████║╚██████╔╝██║  ██║██║  ██║╚██████╗██║  ██║███████╗
+# ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝
+# °°°·._.··._.·°°°·.°·..·°¯°··°¯°·.·°.·°°°°·.·°·._.··._.·°°°
+
 import os
 import requests
 import threading
@@ -20,8 +45,9 @@ while True:
     # Keywords that invalidate a website (as substrings)
     invalid_keywords = ['lander', 'sale', 'available', 'parked domain', 'geparkeerd', 'defecto', 'construction', 'Loading...', 'Domain', 'Registered']
 
-    # Ask the user for the website name
-    website_name = input("Enter the website name (e.g., yahoo): ").strip()
+    # Ask the user for the website names (comma-separated)
+    website_names_input = input("Enter the website names (e.g., yahoo,google,bing): ").strip()
+    website_names = [name.strip() for name in website_names_input.split(',')]
 
     # Ask the user if they want to use the keyword filter (default to yes)
     use_filter_input = input("Do you want to use the keyword filter? (yes/y or no/n) [default: yes]: ").strip().lower()
@@ -38,13 +64,9 @@ while True:
     with open(list_path, 'r') as file:
         gtlds = [line.strip() for line in file]
 
-    # Queue to manage the GTLDs to be processed by threads
-    queue = Queue()
-
     # Function to check if a website is online and valid
-    def check_website(pbar):
-        while not queue.empty():
-            gtld = queue.get()
+    def check_website(website_name, pbar):
+        for gtld in gtlds:
             url = f"https://{website_name}.{gtld}"
             try:
                 # Resolve the IPv4 address
@@ -84,25 +106,53 @@ while True:
             except (requests.RequestException, socket.gaierror):
                 pass
             pbar.update(1)
-            queue.task_done()
 
-    # Enqueue all GTLDs
-    for gtld in gtlds:
-        queue.put(gtld)
+    for website_name in website_names:
+        print(f"{Fore.YELLOW}Checking {website_name}...{Style.RESET_ALL}")
+        
+        # Initialize progress bar
+        with tqdm(total=len(gtlds), desc=f"{Fore.CYAN}Checking {website_name}", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}]", colour='cyan') as pbar:
+            # Create and start threads
+            threads = []
+            for _ in range(num_threads):
+                thread = threading.Thread(target=check_website, args=(website_name, pbar))
+                thread.start()
+                threads.append(thread)
 
-    # Initialize progress bar
-    with tqdm(total=len(gtlds), desc=f"{Fore.CYAN}Checking websites", bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}]", colour='cyan') as pbar:
-        # Create and start threads
-        threads = []
-        for _ in range(num_threads):
-            thread = threading.Thread(target=check_website, args=(pbar,))
-            thread.start()
-            threads.append(thread)
+            # Wait for all threads to finish
+            for thread in threads:
+                thread.join()
 
-        # Wait for all threads to finish
-        queue.join()
+    print(f"{Fore.YELLOW}Finished checking all websites.{Style.RESET_ALL}")
 
-        for thread in threads:
-            thread.join()
+    # Ask the user if they want to run the script again
+    run_again = input("Do you want to check another set of websites? (yes/y or no/n) [default: no]: ").strip().lower()
+    if run_again not in ['yes', 'y']:
+        print(f"{Fore.RED}Exiting...{Style.RESET_ALL}")
+        break
 
-    print(f"{Fore.YELLOW}Finished checking websites.{Style.RESET_ALL}")
+
+# Disclaimer:
+# This code/script/application/program is solely for educational and learning purposes.
+# All information, datasets, images, code, and materials are presented in good faith and
+# intended for instructive use. However, noarche make no representation or warranty, 
+# express or implied, regarding the accuracy, adequacy, validity, reliability, availability,
+# or completeness of any data or associated materials.
+# Under no circumstance shall noarche have any liability to you for any loss, damage, or 
+# misinterpretation arising due to the use of or reliance on the provided data. Your utilization
+# of the code and your interpretations thereof are undertaken at your own discretion and risk.
+#
+# By executing script/code/application, the user acknowledges and agrees that they have read, 
+# understood, and accepted the terms and conditions (or any other relevant documentation or 
+#policy) as provided by noarche.
+#
+#Visit https://github.com/noarche for more information. 
+#
+#  _.··._.·°°°·.°·..·°¯°·._.··._.·°¯°·.·° .·°°°°·.·°·._.··._
+# ███╗   ██╗ ██████╗  █████╗ ██████╗  ██████╗██╗  ██╗███████╗
+# ████╗  ██║██╔═══██╗██╔══██╗██╔══██╗██╔════╝██║  ██║██╔════╝
+# ██╔██╗ ██║██║   ██║███████║██████╔╝██║     ███████║█████╗  
+# ██║╚██╗██║██║   ██║██╔══██║██╔══██╗██║     ██╔══██║██╔══╝  
+# ██║ ╚████║╚██████╔╝██║  ██║██║  ██║╚██████╗██║  ██║███████╗
+# ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝
+# °°°·._.··._.·°°°·.°·..·°¯°··°¯°·.·°.·°°°°·.·°·._.··._.·°°°
