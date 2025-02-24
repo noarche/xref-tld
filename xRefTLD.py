@@ -37,10 +37,10 @@ init(autoreset=True)
 
 while True:
     # Create hits directory if it doesn't exist
-    os.makedirs('hits', exist_ok=True)
+    os.makedirs('xrefhits', exist_ok=True)
 
     # Path to the file where responsive links will be saved
-    responsive_links_path = os.path.join('hits', 'responsive_links.txt')
+    responsive_links_path = os.path.join('xrefhits', 'responsive_links.txt')
 
     # Keywords that invalidate a website (as substrings)
     invalid_keywords = ['lander', 'sale', 'available', 'parked domain', 'geparkeerd', 'defecto', 'construction', 'Loading...', 'Domain', 'Registered']
@@ -54,11 +54,11 @@ while True:
     use_filter = use_filter_input in ['', 'yes', 'y']
 
     # Ask the user for the number of threads (default to 10)
-    threads_input = input("Enter the number of threads (default: 10): ").strip()
-    num_threads = int(threads_input) if threads_input.isdigit() else 10
+    threads_input = input("DONT USE MORE THAN 1, Enter the number of threads (default: 1): ").strip()
+    num_threads = int(threads_input) if threads_input.isdigit() else 1
 
     # Path to the list of GTLDs
-    list_path = 'list.txt'
+    list_path = 'xreftld.list.txt'
 
     # Read the GTLDs from the list file
     with open(list_path, 'r') as file:
