@@ -777,61 +777,53 @@ func readGTLDs(filename string) ([]string, error) {
 }
 
 // Fetch website details
-func fetchWebsite(domain, gtld string, verbose bool) (string, string, string, int, error) {
+func fetchWebsite(domain, gtld string, verbose bool) (string, string, int, string, error) {
 	url := "https://" + domain + "." + gtld
 
-	// Create custom HTTP client
 	client := &http.Client{
-		Timeout: 300 * time.Millisecond, // Optimized for speed
+		Timeout: 300 * time.Millisecond,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // Ignore SSL cert issues
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 
-	// Create request with random User-Agent
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return "", "", "", 0, err
+		return "", "", 0, "", err
 	}
 	req.Header.Set("User-Agent", userAgents[rand.Intn(len(userAgents))])
 
-	// Make request
 	resp, err := client.Do(req)
 	if err != nil {
 		if verbose {
 			fmt.Println(red, "[ERROR] Failed to connect to:", url, "-", err, reset)
 		}
-		return "", "", "", 0, err
+		return "", "", 0, "", err
 	}
 	defer resp.Body.Close()
 
-	// Read response body
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", "", 0, err
+		return "", "", 0, "", err
 	}
 	bodyString := string(bodyBytes)
 
-	// Extract title from HTML
 	title := extractTitleFromHead(bodyString)
-
-	// Get content length in KB
 	contentLength := len(bodyBytes) / 1024
 
-	// Get IP address
 	ip, err := resolveIP(domain + "." + gtld)
 	if err != nil {
 		if verbose {
 			fmt.Println(red, "[ERROR] Failed to resolve IP for:", url, "-", err, reset)
 		}
-		return "", "", "", 0, err
+		return "", "", 0, "", err
 	}
 
 	if verbose {
-		fmt.Println(green, "[SUCCESS]", url, "- IP:", ip, "- Title:", title, "- Size:", contentLength, "KB", reset)
+		fmt.Println(green, "[SUCCESS]", url, "- IP:", ip, "- Size:", contentLength, "KB - Title:", title, reset)
 	}
 
-	return title, url, ip, contentLength, nil
+	return url, ip, contentLength, title, nil
 }
 
 // Extract title from raw HTML
@@ -846,10 +838,8 @@ func extractTitleFromHead(htmlContent string) string {
 
 // Resolve domain to IP with retry
 func resolveIP(domain string) (string, error) {
-	// Try resolving the domain with a fallback mechanism
 	ips, err := net.LookupIP(domain)
 	if err != nil {
-		// Retry logic or fallback DNS resolution
 		ips, err = net.LookupIP(domain)
 		if err != nil {
 			return "", fmt.Errorf("failed to resolve IP for %s: %v", domain, err)
@@ -858,7 +848,7 @@ func resolveIP(domain string) (string, error) {
 	return ips[0].String(), nil
 }
 
-// Save result to file without color codes
+// Save result to file
 func saveResult(result string) error {
 	file, err := os.OpenFile(resultsFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -867,12 +857,9 @@ func saveResult(result string) error {
 	defer file.Close()
 
 	// Remove ANSI color codes
-	result = strings.ReplaceAll(result, blue, "")
-	result = strings.ReplaceAll(result, green, "")
-	result = strings.ReplaceAll(result, red, "")
-	result = strings.ReplaceAll(result, reset, "")
+	cleanResult := strings.NewReplacer(blue, "", green, "", red, "", reset, "").Replace(result)
 
-	_, err = file.WriteString(result + "\n")
+	_, err = file.WriteString(cleanResult + "\n")
 	return err
 }
 
@@ -910,20 +897,17 @@ func cleanResultsFile() {
 }
 
 func main() {
-	// Load GTLDs
 	gtlds, err := readGTLDs("xref.list.ini")
 	if err != nil {
 		fmt.Println(red + "Error: Unable to read xref.list.ini" + reset)
 		return
 	}
 
-	// Get user input for domains
 	fmt.Print("Enter domain(s) (comma-separated): ")
 	var input string
 	fmt.Scanln(&input)
 	domains := strings.Split(strings.ReplaceAll(input, " ", ""), ",")
 
-	// Get thread count
 	fmt.Print("Enter number of threads (default 1): ")
 	var threadInput string
 	fmt.Scanln(&threadInput)
@@ -932,7 +916,6 @@ func main() {
 		fmt.Sscanf(threadInput, "%d", &threads)
 	}
 
-	// Ask for verbose mode
 	verbose := false
 	fmt.Print("Enable verbose mode? (y/n): ")
 	var verboseInput string
@@ -941,16 +924,6 @@ func main() {
 		verbose = true
 	}
 
-	// Ask if the user wants to filter out blank pages (under 2.80KB)
-	var filterSmallPages bool
-	fmt.Print("Do you want to filter out blank pages (under 2.80KB)? (y/n): ")
-	var filterInput string
-	fmt.Scanln(&filterInput)
-	if strings.ToLower(filterInput) == "y" {
-		filterSmallPages = true
-	}
-
-	// Use a WaitGroup to manage goroutines
 	var wg sync.WaitGroup
 	semaphore := make(chan struct{}, threads)
 
@@ -964,25 +937,20 @@ func main() {
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
-				title, url, ip, size, err := fetchWebsite(domain, gtld, verbose)
+				url, ip, size, title, err := fetchWebsite(domain, gtld, verbose)
 				if err == nil {
-					// If filtering is enabled, skip small pages
-					if filterSmallPages && size < 2800 {
-						return
-					}
-
 					elapsed := time.Since(startTime)
-					estimatedRemaining := fmt.Sprintf("%v remaining", time.Duration(len(domains)*len(gtlds))*280*time.Millisecond-elapsed)
+					remainingTime := fmt.Sprintf("%v remaining", time.Duration(len(domains)*len(gtlds))*280*time.Millisecond-elapsed)
 
-					result := fmt.Sprintf("%s%s%s, %s%s%s, %s%s%s, %s%d KB%s | %s%s%s",
-						blue, title, reset,
+					result := fmt.Sprintf("%s%s%s, %s%s%s, %s%d KB%s, %s%s%s | %s%s%s",
 						green, url, reset,
 						red, ip, reset,
 						blue, size, reset,
-						green, estimatedRemaining, reset)
+						green, title, reset,
+						blue, remainingTime, reset)
 
 					fmt.Println(result)
-					saveResult(fmt.Sprintf("%s, %s, %s, %d KB", title, url, ip, size))
+					saveResult(fmt.Sprintf("%s, %s, %d KB, %s", url, ip, size, title))
 				}
 			}(domain, gtld)
 		}
