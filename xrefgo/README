@@ -1,0 +1,68 @@
+## About
+
+XRef Checker is a multi-threaded Go script that scans multiple top-level domains (TLDs) for given domain names, checking if their websites are responsive. It extracts the page title, URL, IP address, and page size (in KB) while keeping the console clean unless verbose mode is enabled. Results are displayed in color-coded text but saved in plain text format for easy reading.
+
+## Features
+
+✅ Reads a list of TLDs from xref.list.ini
+✅ Prompts for one or more domain names (comma-separated)
+✅ Checks https://{domain}.{gtld} for a response
+✅ Extracts {pageTitle}, {URL}, {ipv4}, {pageSizeInKB}
+✅ Displays estimated time remaining
+✅ Uses a random user agent for each request
+✅ Supports multi-threading (configurable)
+✅ 280ms timeout per request (no redirects, no scripts, no files)
+✅ Saves results to xref.results.txt, appending without overwriting
+✅ Removes duplicates and sorts results at the end
+
+
+## Installation & Usage
+
+go mod init xref_checker
+
+go mod tidy 
+
+go mod run 
+
+### Build the Executable
+
+Run the following command to compile the script:
+
+go build -o xref_checker xref_checker.go
+
+###  Run the Script
+
+Execute the compiled binary:
+
+./xref_checker
+
+## Input Prompts
+
+    Enter domain(s) (e.g., google,yahoo,aol)
+    Enter the number of threads (default: 1)
+    Enable verbose mode? (y/n)
+
+## Example Output (Console)
+
+Google, https://google.com, 142.250.182.142, 105 KB | 2.3s remaining
+Yahoo, https://yahoo.com, 98.137.11.163, 87 KB | 1.8s remaining
+
+## Example Output (Saved in xref.results.txt)
+
+Google, https://google.com, 142.250.182.142, 105 KB
+Yahoo, https://yahoo.com, 98.137.11.163, 87 KB
+
+Configuration File (xref.list.ini)
+
+This file should contain one TLD per line. Example:
+
+com
+net
+org
+io
+co
+
+Notes
+
+    If a website is unresponsive, it will be skipped without error messages.
+    The results file is automatically cleaned and sorted at the end of the scan.
