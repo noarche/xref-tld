@@ -1,6 +1,6 @@
 ### Update:
 
-see directory xrefgo for the updated version written in GO, Much faster, threaded, less cpu use. 
+see directory [xrefgo](https://github.com/noarche/xref-tld/tree/main/xrefgo) for the updated version written in GO, Much faster, threaded, less cpu use. 
 
 
 ![xreftld](https://github.com/user-attachments/assets/d974f654-ab4d-42c0-bfe9-da401a2439a8)
